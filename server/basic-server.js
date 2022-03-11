@@ -1,5 +1,6 @@
 /* Import node's http module: */
 var http = require('http');
+var handleRequest = require('./request-handler.js').requestHandler;
 
 
 // Every server needs to listen on a port with a unique number. The
@@ -12,7 +13,7 @@ var port = 3000;
 // For now, since you're running this server on your local machine,
 // we'll have it listen on the IP address 127.0.0.1, which is a
 // special address that always refers to localhost.
-var ip = '127.0.0.1';
+var ip = '127.0.0.1'; // <~ localhost
 
 
 
@@ -25,6 +26,10 @@ var ip = '127.0.0.1';
 var server = http.createServer(handleRequest);
 console.log('Listening on http://' + ip + ':' + port);
 server.listen(port, ip);
+
+
+// help desk:
+console.log(handleRequest);
 
 // To start this server, run:
 //
