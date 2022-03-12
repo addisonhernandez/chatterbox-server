@@ -28,6 +28,10 @@ var defaultCorsHeaders = {
   'access-control-max-age': 10 // Seconds.
 };
 
+// closure scoped message variable:
+let nextMessageId = 1;
+let messageLog = [];
+
 var requestHandler = function (request, response) {
   // Request and Response come from node's http module.
   //
@@ -45,44 +49,63 @@ var requestHandler = function (request, response) {
   // console.logs in your code.
   console.log('Serving request type ' + request.method + ' for url ' + request.url);
 
-  if (request.url === '/classes/mesages' && request.method === 'GET') {
-    // The outgoing status.
+  if (request.url === '/classes/messages' && request.method === 'GET') {
     let statusCode = 200;
-
-    // See the note below about CORS headers.
     let headers = defaultCorsHeaders;
 
-
-    // Tell the client we are sending them plain text.
-    //
-    // You will need to change this if you are sending something
-    // other than plain text, like JSON or HTML.
     headers['Content-Type'] = 'application/json';
 
-    // .writeHead() writes to the request line and headers of the response,
-    // which includes the status and all headers.
     response.writeHead(statusCode, headers);
 
-    // Make sure to always call response.end() - Node may not send
-    // anything back to the client until you do. The string you pass to
-    // response.end() will be the body of the response - i.e. what shows
-    // up in the browser.
-    //
-    // Calling .end "flushes" the response's internal buffer, forcing
-    // node to actually send all the data over to the client.
-    response.end(JSON.stringify(['Hello World']));
-  } else if (request.url === '/classes/mesages' && request.method === 'POST') {
+    response.end(JSON.stringify(messageLog));
+  } else if (request.url === '/classes/messages' && request.method === 'POST') {
     let statusCode = 201;
     let headers = defaultCorsHeaders;
+
     headers['Content-Type'] = 'application/json';
     response.writeHead(statusCode, headers);
 
-    response.end(JSON.stringify(['Hello World']));
+    request.on('data', (data) => {
+      const messageTime = new Date();
+      const messageData = JSON.parse(data);
+
+      const newMessage = {
+        'message_id': nextMessageId,
+        'roomname': messageData.roomname || 'lobby',
+        'text': messageData.text,
+        'username': messageData.username,
+        'created_at': messageTime.toISOString(),
+        'updated_at': messageTime.toISOString()
+      };
+
+      messageLog.push(newMessage);
+
+      nextMessageId += 1;
+
+      response.write(Buffer(JSON.stringify(newMessage)));
+    }).on('end', () => { response.end(); });
+
+
+  } else if (request.method === 'OPTIONS') {
+    let statusCode = 200;
+
+    let headers = defaultCorsHeaders;
+
+    response.writeHead(200, headers);
+
+  } else {
+    let statusCode = 404;
+    let headers = defaultCorsHeaders;
+
+    // headers['Content-Type'] = 'application/json';
+
+    // response.writeHead(statusCode, headers);
+    response.writeHead(404);
+
+
+    response.end('404 Not Found');
   }
 
-  // Enjoy dinner! :)
-  response.end(JSON.stringify(['Hello World']));
-  // you too!
 };
 
 module.exports.requestHandler = requestHandler;
